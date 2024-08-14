@@ -158,63 +158,65 @@ public class Board {
                     hasAdjacent = true;
                 }
             }
-            Board isFirstMove = isBoardEmpty();
-            if (isFirstMove) {
-                if (!coversCenterCell(word)) {
+        }
+
+        boolean isFirstMove = isBoardEmpty();
+        if (isFirstMove) {
+            if (!coversCenterCell(word)) {
+                return false;
+            }
+        } else {
+            if (!hasAdjacent && !overlapExistingTile) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isBoardEmpty() {
+        for (int i = 0; i < sizeBoard; i++) {
+            for (int j = 0; j < sizeBoard; j++) {
+                if (board[i][j] != null) {
                     return false;
                 }
-            } else {
-                if (!hasAdjacent && !overlapExistingTile) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        private boolean isBoardEmpty() {
-            for (int i = 0; i < sizeBoard; i++) {
-                for (int j = 0; j < sizeBoard; j++) {
-                    if (board[i][j] != null) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        //check where the center of the board
-        private boolean coversCenterCell(Word word)
-        {
-            int row1 = word.getRow();
-            int col1 = word.getCol();
-            boolean verical = word.getVertical();
-            int length = word.getTiles().length;
-            int CENTER = sizeBoard / 2;
-            if (vertical) {
-                return col1 == CENTER && row1 <= CENTER && (row1 + length - 1) >= CENTER;
-            } else {
-                return row1 == CENTER && col1 <= CENTER && (col1 + length - 1) >= CENTER;
             }
         }
-        private boolean hasNeighboringTile(int row,int col)
-        {
-            //Up
-            if (row > 0 && board[row - 1][col] != null) {
-                return true;
-            }
-            //Down
-            if (row < sizeBoard - 1 && board[row + 1][col] != null) {
-                return true;
-            }
-            //Left
-            if (col > 0 && board[row][col - 1] != null) {
-                return true;
-            }
-            //Right
-            if (col > sizeBoard - 1 && board[row][col + 1] != null) {
-                return true;
-            }
-            return false;
+        return true;
+    }
+
+    private boolean coversCenterCell(Word word) {
+        int row = word.getRow();
+        int col = word.getCol();
+        boolean vertical = word.getVertical();
+        int length = word.getTiles().length;
+        int CENTER = sizeBoard / 2;
+        if (vertical) {
+            return col == CENTER && row <= CENTER && (row + length - 1) >= CENTER;
+        } else {
+            return row == CENTER && col <= CENTER && (col + length - 1) >= CENTER;
         }
     }
+
+    private boolean hasNeighboringTile(int row, int col) {
+        //Up
+        if (row > 0 && board[row - 1][col] != null) {
+            return true;
+        }
+        //Down
+        if (row < sizeBoard - 1 && board[row + 1][col] != null) {
+            return true;
+        }
+        //Left
+        if (col > 0 && board[row][col - 1] != null) {
+            return true;
+        }
+        //Right
+        if (col < sizeBoard - 1 && board[row][col + 1] != null) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean dictionaryLegal(Word word) {
         return true;
     }
