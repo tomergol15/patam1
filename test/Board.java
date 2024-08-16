@@ -8,14 +8,14 @@ public class Board {
     private static final int sizeBoard = 15;
     public static Board myBoard = null; //singeltion
     private final Tile[][] board;
-    private final Map<String, Integer> bonusTiles; // מפה שמכילה את הבונוסים של המשבצות
+    private final int[][] bonusTiles; // מפה שמכילה את הבונוסים של המשבצות
     private boolean starUsed;
     private Board() {
         board = new Tile[sizeBoard][sizeBoard];
          for (int i = 0; i < sizeBoard; i++) {
             Arrays.fill(board[i], null);
         }
-         bonusTiles = new HashMap<>();
+         bonusTiles = new int[sizeBoard][sizeBoard];
          initializeBonusTiles();
          starUsed = false;
     }
@@ -29,6 +29,11 @@ public class Board {
 
     private void initializeBonusTiles() {
         // Triple Word Score (אדום)
+        for(int i=0;i< bonusTiles.length;i++) {
+            for (int j = 0; j < bonusTiles.length; j++) {
+                bonusTiles[i][j] = 0;
+            }
+        }
         setBonusTile(0, 0, 3);
         setBonusTile(0, 7, 3);
         setBonusTile(0, 14, 3);
@@ -100,12 +105,11 @@ public class Board {
         setBonusTile(7, 7, 2); // הכוכב נמצא במרכז ומכפיל את ערך המילה
     }
     private void setBonusTile(int row, int col, int bonus) {
-        String key = generateKey(row, col);
-        bonusTiles.put(key, bonus); // מיקום הלוח עם ערך הבונוס
+        bonusTiles[row][col] = bonus;
     }
-    private String generateKey(int row, int col) {
-        return row + "," + col;
-    }
+//    private String generateKey(int row, int col) {
+//        return row + "," + col;
+//    }
 
     public Tile[][] getTiles() {
         Tile[][] copy = new Tile[sizeBoard][sizeBoard];
@@ -281,18 +285,19 @@ public class Board {
         int row = word.getRow();
         int col = word.getCol();
         boolean vertical = word.getVertical();
-        Tile[] tiles = word.getTiles();
+        Tile[] originalTiles = word.getTiles();
+        Tile[] newTiles = Arrays.copyOf(originalTiles,originalTiles.length);
 
-        for (int i = 0; i < tiles.length; i++) {
+        for (int i = 0; i < newTiles.length; i++) {
             int currentRow = vertical ? row + i : row;
             int currentCol = vertical ? col : col + i;
 
             //if the current tile is null - search the tile in the board
-            if (tiles[i] == null) {
-                tiles[i] = board[currentRow][currentCol];
+            if (newTiles[i] == null) {
+                newTiles[i] = board[currentRow][currentCol];
             }
         }
-        return new Word(tiles, row, col, vertical);
+        return new Word(newTiles, row, col, vertical);
     }
 
 
@@ -366,13 +371,13 @@ public class Board {
     for(int i=0;i< tiles.length;i++) {
         int currentRow = vertical ? row + i : row;
         int currentCol = vertical ? col : col + i;
-        String key = generateKey(currentRow, currentCol);
+//        String key = generateKey(currentRow, currentCol);
 
         Tile currentTile = tiles[i];
         int letterScore = currentTile.score;
+        int bonus=bonusTiles[currentRow][currentCol];
+        if (bonus!=0) {
 
-        if (bonusTiles.containsKey(key)) {
-            int bonus = bonusTiles.get(key);
             if (bonus == 3) {
                 wordMultiplier *= bonus;
                 letterScore*=wordMultiplier;
@@ -417,7 +422,7 @@ public class Board {
         }
 
         //sum all the score
-        int totalScore = getScore(word);
+        int totalScore = getScore(myWords.getFirst());
 
         //we get the data members of the word
         Tile[] tiles = word.getTiles();
