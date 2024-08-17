@@ -8,8 +8,10 @@ public class Board {
     private static final int sizeBoard = 15;
     public static Board myBoard = null; //singeltion
     private final Tile[][] board;
-    private final int[][] bonusTiles; // מפה שמכילה את הבונוסים של המשבצות
+    private final int[][] bonusTiles;
     private boolean starUsed;
+    private ArrayList<Word> bankWords;
+
 
     private Board() {
         board = new Tile[sizeBoard][sizeBoard];
@@ -19,6 +21,7 @@ public class Board {
         bonusTiles = new int[sizeBoard][sizeBoard];
         initializeBonusTiles();
         starUsed = false;
+        bankWords = new ArrayList<>();
     }
 
     //singelton
@@ -103,8 +106,8 @@ public class Board {
         setBonusTile(14, 3, 2);
         setBonusTile(14, 11, 2);
 
-        // המרכז (כוכב)
-        setBonusTile(7, 7, 2); // הכוכב נמצא במרכז ומכפיל את ערך המילה
+        // the center Star
+        setBonusTile(7, 7, 2);
     }
 
     private void setBonusTile(int row, int col, int bonus) {
@@ -232,13 +235,13 @@ public class Board {
     public ArrayList<Word> getWords(Word word) {
         ArrayList<Word> newWords = new ArrayList<>();
 
-        // בניית המילה המלאה על סמך המילה הראשית
+        //built thw complete word we get - without null
         Word completeWord = buildCompleteWord(word);
         if (completeWord != null) {
             newWords.add(completeWord);
         }
 
-        //trying to put into the board the completeWord
+        //trying to put into the board the completeWord and makesure it's on the board
         Tile[] tiles = completeWord.getTiles();
         int rowC = completeWord.getRow();
         int colC = completeWord.getCol();
@@ -250,7 +253,7 @@ public class Board {
             board[currentRow][currentCol] = tiles[i];
         }
 
-        // בדוק אם נוצרות מילים חדשות בכיוון הנגדי
+        // checks for new words
         for (int i = 0; i < word.getTiles().length; i++) {
             int row = word.getVertical() ? word.getRow() + i : word.getRow();
             int col = word.getVertical() ? word.getCol() : word.getCol() + i;
@@ -310,36 +313,14 @@ public class Board {
 
         return new Word(newTiles, vertical ? start : row, vertical ? col : start, vertical);
     }
-
-//    private Word findWordAt(int row, int col, boolean vertical) {
-//        int start = vertical ? row : col;
-//        int end = start;
-//
-//        // חפש אחורה עד שמגיעים להתחלה של המילה
-//        while (start > 0 && board[vertical ? start - 1 : row][vertical ? col : start - 1] != null) {
-//            start--;
-//        }
-//
-//        // חפש קדימה עד שמגיעים לסוף המילה
-//        while (end < sizeBoard - 1 && board[vertical ? end + 1 : row][vertical ? col : end + 1] != null) {
-//            end++;
-//        }
-//
-//        // צור את המילה החדשה
-//        Tile[] newTiles = new Tile[end - start + 1];
-//        for (int i = start; i <= end; i++) {
-//            newTiles[i - start] = board[vertical ? i : row][vertical ? col : i];
-//        }
-//
-//        // אם המילה כוללת אריחים, החזר אותה
-//        if (newTiles.length > 0) {
-//            return new Word(newTiles, vertical ? start : row, vertical ? col : start, vertical);
-//        }
-//
-//        return null;
-//    }
-
     public int getScore(Word word) {
+        // checking if the word is already in the bank
+        for (Word w : bankWords) {
+            if (w.equals(word)) {
+                return 0;
+            }
+        }
+
         int score = 0;
         int wordMultiplier = 1;
 
@@ -356,22 +337,22 @@ public class Board {
             Tile currentTile = tiles[i];
             int letterScore = currentTile.score;
             int bonus = bonusTiles[currentRow][currentCol];
-            if (bonus != 0) {
-
-                if (bonus == 3) {
-                    wordMultiplier *= bonus;
-                    letterScore *= wordMultiplier;
+            if (bonus == 2) {
+                if (currentRow == 7 && currentCol == 7 && starUsed) {
                     score += letterScore;
-                    wordMultiplier = 1;
                     continue;
-                } else if (bonus == 2) {
-                    // בדיקה אם מדובר בכוכב במרכז
-                    if (currentRow == sizeBoard / 2 && currentCol == sizeBoard / 2 && !starUsed) {
-                        wordMultiplier *= bonus;
-                    }
-//                else {
-//                    letterScore *= bonus;
-//                }
+                } else if (currentRow == 7 && currentCol == 7) {
+                    wordMultiplier *= 2;
+                } else if (isDoubleWordScore(currentRow, currentCol)) {
+                    wordMultiplier *= 2;
+                } else {
+                    letterScore *= 2;
+                }
+            } else if (bonus == 3) {
+                if (isTripleWordScore(currentRow, currentCol)) {
+                    wordMultiplier *= 3;
+                } else {
+                    letterScore *= 3;
                 }
             }
             score += letterScore;
@@ -380,8 +361,26 @@ public class Board {
                 word.getCol() <= sizeBoard / 2 && word.getCol() + tiles.length > sizeBoard / 2) {
             starUsed = true;
         }
-
+        bankWords.add(word);
         return score * wordMultiplier;
+    }
+
+    private boolean isDoubleWordScore(int row, int col) {
+        return (row == 1 && col == 1) || (row == 2 && col == 2) ||
+                (row == 3 && col == 3) || (row == 4 && col == 4) ||
+                (row == 10 && col == 10) || (row == 11 && col == 11) ||
+                (row == 12 && col == 12) || (row == 13 && col == 13) ||
+                (row == 1 && col == 13) || (row == 2 && col == 12) ||
+                (row == 3 && col == 11) || (row == 4 && col == 10) ||
+                (row == 10 && col == 4) || (row == 11 && col == 3) ||
+                (row == 12 && col == 2) || (row == 13 && col == 1);
+    }
+
+    private boolean isTripleWordScore(int row, int col) {
+        return (row == 0 && col == 0) || (row == 0 && col == 7) ||
+                (row == 0 && col == 14) || (row == 7 && col == 0) ||
+                (row == 7 && col == 14) || (row == 14 && col == 0) ||
+                (row == 14 && col == 7) || (row == 14 && col == 14);
     }
 
     public int tryPlaceWord(Word word) {
@@ -398,8 +397,15 @@ public class Board {
             if (!dictionaryLegal(w1)) {
                 return 0;
             }
+           totalScore+=getScore(w1);
+        }
+        //sum all the score
+       // totalScore = getScore(myWords.getFirst());
+        return totalScore;
+    }
+}
 
-            //for new - put this in a commit because i fill the board
+//for new - put this in a commit because i fill the board
 //            Tile[] tiles = w1.getTiles();
 //            int row = w1.getRow();
 //            int col = w1.getCol();
@@ -410,13 +416,9 @@ public class Board {
 //                int currentCol = vertical ? col : col + i;
 //                board[currentRow][currentCol] = tiles[i];
 //            }
-           //totalScore+=getScore(w1);
-        }
-        //sum all the score
-        totalScore = getScore(myWords.getFirst());
-        return totalScore;
-    }
-}
+
+
+
 //        //we get the data members of the word
 //        Tile[] tiles = word.getTiles();
 //        int row = word.getRow();
@@ -432,4 +434,21 @@ public class Board {
 
         //}
 
-//}
+//commit for a getscore that didnt work:
+//            if (bonus != 0) {
+//                if (bonus == 3) {
+//                    wordMultiplier *= bonus;
+//                    letterScore *= wordMultiplier;
+//                    score += letterScore;
+//                    wordMultiplier = 1;
+//                    continue;
+//                } else if (bonus == 2) {
+//                    // בדיקה אם מדובר בכוכב במרכז
+//                    if (currentRow == sizeBoard / 2 && currentCol == sizeBoard / 2 && !starUsed) {
+//                        wordMultiplier *= bonus;
+//                    }
+// else {
+//                    letterScore *= bonus;
+//                }
+//                }
+//            }
