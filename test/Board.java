@@ -10,15 +10,17 @@ public class Board {
     private final Tile[][] board;
     private final int[][] bonusTiles; // מפה שמכילה את הבונוסים של המשבצות
     private boolean starUsed;
+
     private Board() {
         board = new Tile[sizeBoard][sizeBoard];
-         for (int i = 0; i < sizeBoard; i++) {
+        for (int i = 0; i < sizeBoard; i++) {
             Arrays.fill(board[i], null);
         }
-         bonusTiles = new int[sizeBoard][sizeBoard];
-         initializeBonusTiles();
-         starUsed = false;
+        bonusTiles = new int[sizeBoard][sizeBoard];
+        initializeBonusTiles();
+        starUsed = false;
     }
+
     //singelton
     public static Board getBoard() {
         if (myBoard == null) {
@@ -29,7 +31,7 @@ public class Board {
 
     private void initializeBonusTiles() {
         // Triple Word Score (אדום)
-        for(int i=0;i< bonusTiles.length;i++) {
+        for (int i = 0; i < bonusTiles.length; i++) {
             for (int j = 0; j < bonusTiles.length; j++) {
                 bonusTiles[i][j] = 0;
             }
@@ -104,6 +106,7 @@ public class Board {
         // המרכז (כוכב)
         setBonusTile(7, 7, 2); // הכוכב נמצא במרכז ומכפיל את ערך המילה
     }
+
     private void setBonusTile(int row, int col, int bonus) {
         bonusTiles[row][col] = bonus;
     }
@@ -113,9 +116,8 @@ public class Board {
 
     public Tile[][] getTiles() {
         Tile[][] copy = new Tile[sizeBoard][sizeBoard];
-        for(int i=0; i < sizeBoard; i++)
-        {
-            System.arraycopy(board[i],0,copy[i],0,sizeBoard);
+        for (int i = 0; i < sizeBoard; i++) {
+            System.arraycopy(board[i], 0, copy[i], 0, sizeBoard);
         }
         return copy;
     }
@@ -226,6 +228,7 @@ public class Board {
     public boolean dictionaryLegal(Word word) {
         return true;
     }
+
     public ArrayList<Word> getWords(Word word) {
         ArrayList<Word> newWords = new ArrayList<>();
 
@@ -235,6 +238,18 @@ public class Board {
             newWords.add(completeWord);
         }
 
+        //trying to put into the board the completeWord
+        Tile[] tiles = completeWord.getTiles();
+        int rowC = completeWord.getRow();
+        int colC = completeWord.getCol();
+        boolean vertical = completeWord.getVertical();
+        //we put the word into the board
+        for (int i = 0; i < tiles.length; i++) {
+            int currentRow = vertical ? rowC + i : rowC;
+            int currentCol = vertical ? colC : colC + i;
+            board[currentRow][currentCol] = tiles[i];
+        }
+
         // בדוק אם נוצרות מילים חדשות בכיוון הנגדי
         for (int i = 0; i < word.getTiles().length; i++) {
             int row = word.getVertical() ? word.getRow() + i : word.getRow();
@@ -242,51 +257,18 @@ public class Board {
 
             Word perpendicularWord = findWordAt(row, col, !word.getVertical());
             if (perpendicularWord != null && perpendicularWord.getTiles().length > 1) {
-                // בדוק אם המילה שנוצרה היא לא המילה הראשית שכבר נוספה
-                boolean isNewWord = true;
-                for (Word existingWord : newWords) {
-                    if (existingWord.equals(perpendicularWord)) {
-                        isNewWord = false;
-                        break;
-                    }
-                }
-                if (isNewWord) {
-                    newWords.add(perpendicularWord);
-                }
+                newWords.add(perpendicularWord);
             }
         }
-
         return newWords;
     }
-
-//    public ArrayList<Word> getWords(Word word) {
-//        ArrayList<Word> newWords = new ArrayList<>();
-//
-//        // add the word we've got
-//        Word completeWord = buildCompleteWord(word);
-//        if (completeWord != null) {
-//            newWords.add(completeWord);
-//        }
-//        //check if there is another word the born from the opotosite way
-//        for (int i = 0; i < word.getTiles().length; i++) {
-//            int row = word.getVertical() ? word.getRow() + i : word.getRow();
-//            int col = word.getVertical() ? word.getCol() : word.getCol() + i;
-//
-//            //find a verticel/horozinoal word
-//            Word perpendicularWord = findWordAt(row, col, !word.getVertical());
-//            if (perpendicularWord != null && perpendicularWord.getTiles().length > 1) {
-//                newWords.add(perpendicularWord);
-//            }
-//        }
-//        return newWords;
-//    }
 
     private Word buildCompleteWord(Word word) {
         int row = word.getRow();
         int col = word.getCol();
         boolean vertical = word.getVertical();
         Tile[] originalTiles = word.getTiles();
-        Tile[] newTiles = Arrays.copyOf(originalTiles,originalTiles.length);
+        Tile[] newTiles = Arrays.copyOf(originalTiles, originalTiles.length);
 
         for (int i = 0; i < newTiles.length; i++) {
             int currentRow = vertical ? row + i : row;
@@ -304,31 +286,29 @@ public class Board {
     private Word findWordAt(int row, int col, boolean vertical) {
         int start = vertical ? row : col;
         int end = start;
-        int fixedRow = row;
-        int fixedCol = col;
 
-        // חפש אחורה עד שמגיעים להתחלה של המילה
-        while (start > 0 && (vertical ? board[start - 1][fixedCol] : board[fixedRow][start - 1]) != null) {
+        // Move backwards to find the start of the word
+        while (start > 0 && (vertical ? board[start - 1][col] : board[row][start - 1]) != null) {
             start--;
         }
 
-        // חפש קדימה עד שמגיעים לסוף המילה
-        while (end < sizeBoard - 1 && (vertical ? board[end + 1][fixedCol] : board[fixedRow][end + 1]) != null) {
+        // Move forward to find the end of the word
+        while (end < sizeBoard - 1 && (vertical ? board[end + 1][col] : board[row][end + 1]) != null) {
             end++;
         }
 
-        // צור את המילה החדשה
+        // If only a single tile is found, it's not a valid word
+        if (start == end) {
+            return null;
+        }
+
+        // Create the word
         Tile[] newTiles = new Tile[end - start + 1];
         for (int i = start; i <= end; i++) {
-            newTiles[i - start] = vertical ? board[i][fixedCol] : board[fixedRow][i];
+            newTiles[i - start] = vertical ? board[i][col] : board[row][i];
         }
 
-        // בדיקה אם המילה כוללת אריחים
-        if (newTiles.length > 0) {
-            return new Word(newTiles, vertical ? start : fixedRow, vertical ? fixedCol : start, vertical);
-        }
-
-        return null;
+        return new Word(newTiles, vertical ? start : row, vertical ? col : start, vertical);
     }
 
 //    private Word findWordAt(int row, int col, boolean vertical) {
@@ -360,84 +340,96 @@ public class Board {
 //    }
 
     public int getScore(Word word) {
-    int score=0;
-    int wordMultiplier = 1;
+        int score = 0;
+        int wordMultiplier = 1;
 
-    int row = word.getRow();
-    int col = word.getCol();
-    boolean vertical = word.getVertical();
-    Tile[] tiles = word.getTiles();
+        int row = word.getRow();
+        int col = word.getCol();
+        boolean vertical = word.getVertical();
+        Tile[] tiles = word.getTiles();
 
-    for(int i=0;i< tiles.length;i++) {
-        int currentRow = vertical ? row + i : row;
-        int currentCol = vertical ? col : col + i;
+        for (int i = 0; i < tiles.length; i++) {
+            int currentRow = vertical ? row + i : row;
+            int currentCol = vertical ? col : col + i;
 //        String key = generateKey(currentRow, currentCol);
 
-        Tile currentTile = tiles[i];
-        int letterScore = currentTile.score;
-        int bonus=bonusTiles[currentRow][currentCol];
-        if (bonus!=0) {
+            Tile currentTile = tiles[i];
+            int letterScore = currentTile.score;
+            int bonus = bonusTiles[currentRow][currentCol];
+            if (bonus != 0) {
 
-            if (bonus == 3) {
-                wordMultiplier *= bonus;
-                letterScore*=wordMultiplier;
-                score+=letterScore;
-                wordMultiplier=1;
-                continue;
-            } else if (bonus == 2) {
-                // בדיקה אם מדובר בכוכב במרכז
-                if (currentRow == sizeBoard / 2 && currentCol == sizeBoard / 2 && !starUsed) {
+                if (bonus == 3) {
                     wordMultiplier *= bonus;
-                }
+                    letterScore *= wordMultiplier;
+                    score += letterScore;
+                    wordMultiplier = 1;
+                    continue;
+                } else if (bonus == 2) {
+                    // בדיקה אם מדובר בכוכב במרכז
+                    if (currentRow == sizeBoard / 2 && currentCol == sizeBoard / 2 && !starUsed) {
+                        wordMultiplier *= bonus;
+                    }
 //                else {
 //                    letterScore *= bonus;
 //                }
+                }
             }
+            score += letterScore;
         }
-        score += letterScore;
-    }
         if (word.getRow() <= sizeBoard / 2 && word.getRow() + tiles.length > sizeBoard / 2 &&
                 word.getCol() <= sizeBoard / 2 && word.getCol() + tiles.length > sizeBoard / 2) {
             starUsed = true;
         }
 
-        return score*wordMultiplier;
+        return score * wordMultiplier;
     }
 
-    public int tryPlaceWord(Word word){
+    public int tryPlaceWord(Word word) {
         //if thw word is overlap the borders or other things
-        if(!boardLegal(word)){
+        if (!boardLegal(word)) {
             return 0;
         }
-
+        int totalScore=0;
         ArrayList<Word> myWords = new ArrayList<>();
         myWords = getWords(word);
         //loop on all the words in the array that we got
-        for(Word w1 : myWords)
-        {
+        for (Word w1 : myWords) {
             //if the word is not allowed
-            if(!dictionaryLegal(w1)){
+            if (!dictionaryLegal(w1)) {
                 return 0;
             }
-        }
 
+            //for new - put this in a commit because i fill the board
+//            Tile[] tiles = w1.getTiles();
+//            int row = w1.getRow();
+//            int col = w1.getCol();
+//            boolean vertical = w1.getVertical();
+//            //we put the word into the board
+//            for (int i = 0; i < tiles.length; i++) {
+//                int currentRow = vertical ? row + i : row;
+//                int currentCol = vertical ? col : col + i;
+//                board[currentRow][currentCol] = tiles[i];
+//            }
+           //totalScore+=getScore(w1);
+        }
         //sum all the score
-        int totalScore = getScore(myWords.getFirst());
-
-        //we get the data members of the word
-        Tile[] tiles = word.getTiles();
-        int row = word.getRow();
-        int col = word.getCol();
-        boolean vertical = word.getVertical();
-
-        //we put the word into the board
-        for (int i = 0; i < tiles.length; i++) {
-            int currentRow = vertical ? row + i : row;
-            int currentCol = vertical ? col : col + i;
-            board[currentRow][currentCol] = tiles[i];
-        }
+        totalScore = getScore(myWords.getFirst());
         return totalScore;
     }
-
 }
+//        //we get the data members of the word
+//        Tile[] tiles = word.getTiles();
+//        int row = word.getRow();
+//        int col = word.getCol();
+//        boolean vertical = word.getVertical();
+//
+//        //we put the word into the board
+//        for (int i = 0; i < tiles.length; i++) {
+//            int currentRow = vertical ? row + i : row;
+//            int currentCol = vertical ? col : col + i;
+//            board[currentRow][currentCol] = tiles[i];
+//        }
 
+        //}
+
+//}
