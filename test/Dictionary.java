@@ -5,10 +5,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
 public class Dictionary {
-    CacheManager existingWords;
-    CacheManager notExistingWords;
-    BloomFilter bf;
-    String[] fileNames;
+    private final CacheManager existingWords;
+    private final CacheManager notExistingWords;
+    private final BloomFilter bf;
+    private final String[] fileNames;
 
     public Dictionary(String... fileNames) {
         this.existingWords = new CacheManager(400, new LRU());
@@ -42,7 +42,7 @@ public class Dictionary {
             notExistingWords.add(word);
             return false;
         } else {
-            existingWords.add(word);
+            //existingWords.add(word);
             return true;
         }
     }
