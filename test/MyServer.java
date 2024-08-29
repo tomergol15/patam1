@@ -30,7 +30,7 @@ public void start(){
                    ch.handleClient(clientSocket.getInputStream(), clientSocket.getOutputStream());
                    clientSocket.close(); //also close InputStram, OutputStream
                } catch (IOException e) {
-                    System.out.println("Error handling client: " + e.getMessage());
+                    //System.out.println("Error handling client: " + e.getMessage());
                }
            }
        } catch (IOException e) {
